@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express()
+const jwt = require('jsonwebtoken')
 require('dotenv').config();
 const port = process.env.PORT||4000
 
@@ -19,7 +20,10 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
-
+const checkToken=(req,res,next)=>{
+  const authorization=req.headers.authorization;
+  console.log('token checking');
+}
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -42,18 +46,23 @@ async function run() {
         const result =await servicesCollection.findOne(query, options);
         res.send(result)
     })
-    app.get('/orders', async(req,res)=>{
+    app.get('/orders', checkToken, async(req,res)=>{
       const query =req.query
+      console.log(authorization);
       const result =await ordersCollection.find(query).toArray();
       res.send(result)
       
     })
     app.post('/orders',async (req,res)=>{
-         
          const order =req.body;
          const result = await ordersCollection.insertOne(order)
-         res.send(result);
-         
+         res.send(result);  
+    })
+    app.post('/jwt',(req,res)=>{
+        const user=req.body;
+        console.log(user);
+        const token=jwt.sign(user,process.env.TK_SQR,{expiresIn:'1h'});
+        res.send({token});
     })
     app.patch('/orders/:id',async(req,res)=>{
       console.log(req.body);
